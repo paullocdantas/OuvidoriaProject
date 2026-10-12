@@ -1,13 +1,63 @@
+
 # Sistema de Ouvidoria
 # Paulo César Dantas da Silva 20262500013
 
-manifestacoes = []
+import mysql.connector
+import config_local
+
+# CONEXÃO COM O BANCO DE DADOS
+
+conexao = mysql.connector.connect(
+    host=config_local.DB_HOST,
+    user=config_local.DB_USER,
+    password=config_local.DB_PASSWORD,
+    database=config_local.DB_NAME
+)
+
+print("Conexão com o banco de dados realizada com sucesso!")
 
 contador_denuncia = 1
 contador_reclamacao = 1
 contador_solicitacao = 1
 contador_sugestao = 1
 contador_elogio = 1
+
+# CONSULTAR OS PROTOCOLOS JÁ CADASTRADOS NO MYSQL
+
+cursor = conexao.cursor()
+
+cursor.execute("SELECT protocolo FROM manifestacoes")
+
+protocolos = cursor.fetchall()
+
+for protocolo in protocolos:
+
+    codigo_existente = protocolo[0]
+
+    if codigo_existente is not None:
+
+        partes = codigo_existente.split("-")
+
+        if len(partes) == 3 and partes[2].isdigit():
+
+            numero_existente = int(partes[2]) + 1
+
+            if partes[0] == "DEN" and numero_existente > contador_denuncia:
+                contador_denuncia = numero_existente
+
+            elif partes[0] == "REC" and numero_existente > contador_reclamacao:
+                contador_reclamacao = numero_existente
+
+            elif partes[0] == "SOL" and numero_existente > contador_solicitacao:
+                contador_solicitacao = numero_existente
+
+            elif partes[0] == "SGT" and numero_existente > contador_sugestao:
+                contador_sugestao = numero_existente
+
+            elif partes[0] == "ELG" and numero_existente > contador_elogio:
+                contador_elogio = numero_existente
+
+cursor.close()
 
 opcao = 0
 
@@ -84,9 +134,22 @@ while opcao != 5:
 
                 codigo = sigla + "-2026-" + numero
 
-                manifestacao = [codigo, nome, tipo_manifestacao, texto]
+                # GRAVAR A MANIFESTAÇÃO NO MYSQL
 
-                manifestacoes.append(manifestacao)
+                cursor = conexao.cursor()
+
+                sql = """
+                INSERT INTO manifestacoes (protocolo, nome, tipo, descricao)
+                VALUES (%s, %s, %s, %s)
+                """
+
+                valores = (codigo, nome, tipo_manifestacao, texto)
+
+                cursor.execute(sql, valores)
+
+                conexao.commit()
+
+                cursor.close()
 
                 print("\nManifestação cadastrada com sucesso!")
                 print("Protocolo:", codigo)
@@ -110,17 +173,27 @@ while opcao != 5:
 
     elif opcao == 2:
 
-        if len(manifestacoes) == 0:
+        cursor = conexao.cursor()
+
+        cursor.execute(
+            "SELECT protocolo, nome, tipo, descricao FROM manifestacoes"
+        )
+
+        manifestacoes_banco = cursor.fetchall()
+
+        if len(manifestacoes_banco) == 0:
             print("Nenhuma manifestação cadastrada!")
 
         else:
             print("\n========== MANIFESTAÇÕES CADASTRADAS ==========")
 
-            for i in range(len(manifestacoes)):
-                print("\nProtocolo:", manifestacoes[i][0])
-                print("Nome:", manifestacoes[i][1])
-                print("Tipo:", manifestacoes[i][2])
-                print("Descrição:", manifestacoes[i][3])
+            for manifestacao in manifestacoes_banco:
+                print("\nProtocolo:", manifestacao[0])
+                print("Nome:", manifestacao[1])
+                print("Tipo:", manifestacao[2])
+                print("Descrição:", manifestacao[3])
+
+        cursor.close()
 
     # PESQUISAR MANIFESTAÇÕES
 
@@ -129,6 +202,7 @@ while opcao != 5:
         print("\n========= PESQUISAR MANIFESTAÇÕES =========")
         print("1 - PESQUISAR POR TIPO")
         print("2 - PESQUISAR POR NOME")
+        print("3 - PESQUISAR POR PROTOCOLO")
 
         opcao_pesquisa = int(input("Escolha uma opção de pesquisa: "))
 
@@ -167,22 +241,32 @@ while opcao != 5:
                 print("Tipo inválido.")
 
             else:
-                encontrou = False
+
+                cursor = conexao.cursor()
+
+                sql = """
+                SELECT protocolo, nome, tipo, descricao
+                FROM manifestacoes
+                WHERE tipo = %s
+                """
+
+                cursor.execute(sql, (pesquisa,))
+
+                resultados = cursor.fetchall()
 
                 print("\n--- RESULTADO DA PESQUISA ---")
 
-                for manifestacao in manifestacoes:
+                if len(resultados) == 0:
+                    print("Nenhuma manifestação desse tipo foi encontrada.")
 
-                    if manifestacao[2] == pesquisa:
+                else:
+                    for manifestacao in resultados:
                         print("\nProtocolo:", manifestacao[0])
                         print("Nome:", manifestacao[1])
                         print("Tipo:", manifestacao[2])
                         print("Descrição:", manifestacao[3])
 
-                        encontrou = True
-
-                if encontrou == False:
-                    print("Nenhuma manifestação desse tipo foi encontrada.")
+                cursor.close()
 
         # PESQUISAR POR NOME
 
@@ -190,22 +274,65 @@ while opcao != 5:
 
             nome_pesquisa = input("Digite o nome que deseja pesquisar: ")
 
-            encontrou = False
+            cursor = conexao.cursor()
+
+            sql = """
+            SELECT protocolo, nome, tipo, descricao
+            FROM manifestacoes
+            WHERE nome = %s
+            """
+
+            cursor.execute(sql, (nome_pesquisa,))
+
+            resultados = cursor.fetchall()
 
             print("\n--- RESULTADO DA PESQUISA ---")
 
-            for manifestacao in manifestacoes:
+            if len(resultados) == 0:
+                print("Nenhuma manifestação encontrada para esse nome.")
 
-                if manifestacao[1] == nome_pesquisa:
+            else:
+                for manifestacao in resultados:
                     print("\nProtocolo:", manifestacao[0])
                     print("Nome:", manifestacao[1])
                     print("Tipo:", manifestacao[2])
                     print("Descrição:", manifestacao[3])
 
-                    encontrou = True
+            cursor.close()
 
-            if encontrou == False:
-                print("Nenhuma manifestação encontrada para esse nome.")
+        # PESQUISAR POR PROTOCOLO
+
+        elif opcao_pesquisa == 3:
+
+            protocolo_pesquisa = input(
+                "Digite o protocolo que deseja pesquisar: "
+            )
+
+            cursor = conexao.cursor()
+
+            sql = """
+            SELECT protocolo, nome, tipo, descricao
+            FROM manifestacoes
+            WHERE protocolo = %s
+            """
+
+            cursor.execute(sql, (protocolo_pesquisa,))
+
+            resultados = cursor.fetchall()
+
+            print("\n--- RESULTADO DA PESQUISA ---")
+
+            if len(resultados) == 0:
+                print("Nenhuma manifestação encontrada para esse protocolo.")
+
+            else:
+                for manifestacao in resultados:
+                    print("\nProtocolo:", manifestacao[0])
+                    print("Nome:", manifestacao[1])
+                    print("Tipo:", manifestacao[2])
+                    print("Descrição:", manifestacao[3])
+
+            cursor.close()
 
         else:
             print("Opção de pesquisa inválida.")
@@ -214,13 +341,21 @@ while opcao != 5:
 
     elif opcao == 4:
 
-        if len(manifestacoes) == 0:
+        cursor = conexao.cursor()
+
+        cursor.execute(
+            "SELECT protocolo, nome, tipo, descricao FROM manifestacoes"
+        )
+
+        manifestacoes_banco = cursor.fetchall()
+
+        if len(manifestacoes_banco) == 0:
             print("Nenhuma manifestação cadastrada.")
 
         else:
             print("\n========== MANIFESTAÇÕES CADASTRADAS ==========")
 
-            for manifestacao in manifestacoes:
+            for manifestacao in manifestacoes_banco:
                 print(
                     manifestacao[0],
                     "-",
@@ -235,19 +370,18 @@ while opcao != 5:
                 "\nDigite o protocolo da manifestação que deseja remover: "
             )
 
-            encontrou = False
+            sql = "DELETE FROM manifestacoes WHERE protocolo = %s"
 
-            for manifestacao in manifestacoes:
+            cursor.execute(sql, (codigo_remover,))
 
-                if manifestacao[0] == codigo_remover:
-                    manifestacoes.remove(manifestacao)
-                    encontrou = True
+            if cursor.rowcount > 0:
+                conexao.commit()
+                print("Manifestação removida com sucesso!")
 
-                    print("Manifestação removida com sucesso!")
-                    break
-
-            if encontrou == False:
+            else:
                 print("Protocolo não localizado.")
+
+        cursor.close()
 
     # SAIR
 
@@ -258,3 +392,5 @@ while opcao != 5:
 
     else:
         print("Opção inválida.")
+
+conexao.close()
