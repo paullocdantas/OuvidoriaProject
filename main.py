@@ -1,5 +1,5 @@
 # Sistema de Ouvidoria
-#Paulo César Dantas da Silva 20262500013
+# Paulo César Dantas da Silva 20262500013
 
 manifestacoes = []
 
@@ -16,7 +16,7 @@ while opcao != 5:
     print("\n=========== SISTEMA DE OUVIDORIA =========")
     print("1 - CADASTRAR MANIFESTAÇÃO")
     print("2 - LISTAR MANIFESTAÇÕES")
-    print("3 - PESQUISAR MANIFESTAÇÕES POR TIPO")
+    print("3 - PESQUISAR MANIFESTAÇÕES")
     print("4 - REMOVER MANIFESTAÇÃO")
     print("5 - SAIR")
 
@@ -25,6 +25,7 @@ while opcao != 5:
     # CADASTRAR A MANIFESTAÇÃO
 
     if opcao == 1:
+
         print("\n--- TIPOS DE MANIFESTAÇÃO ---")
         print("1 - Denúncia")
         print("2 - Reclamação")
@@ -66,6 +67,7 @@ while opcao != 5:
             print("Tipo de manifestação inválida!")
 
         else:
+            nome = input("Digite seu nome: ")
             texto = input("Digite sua manifestação: ")
 
             if texto == "":
@@ -82,7 +84,7 @@ while opcao != 5:
 
                 codigo = sigla + "-2026-" + numero
 
-                manifestacao = [codigo, tipo_manifestacao, texto]
+                manifestacao = [codigo, nome, tipo_manifestacao, texto]
 
                 manifestacoes.append(manifestacao)
 
@@ -116,58 +118,97 @@ while opcao != 5:
 
             for i in range(len(manifestacoes)):
                 print("\nProtocolo:", manifestacoes[i][0])
-                print("Tipo:", manifestacoes[i][1])
-                print("Descrição:", manifestacoes[i][2])
+                print("Nome:", manifestacoes[i][1])
+                print("Tipo:", manifestacoes[i][2])
+                print("Descrição:", manifestacoes[i][3])
 
-    # PESQUISAR POR TIPO
+    # PESQUISAR MANIFESTAÇÕES
 
     elif opcao == 3:
-        print("\n========= PESQUISAR POR TIPO =========")
-        print("1 - Denúncia")
-        print("2 - Reclamação")
-        print("3 - Solicitação")
-        print("4 - Sugestão")
-        print("5 - Elogio")
 
-        tipo_pesquisa = int(input("Escolha o tipo de pesquisa: "))
+        print("\n========= PESQUISAR MANIFESTAÇÕES =========")
+        print("1 - PESQUISAR POR TIPO")
+        print("2 - PESQUISAR POR NOME")
 
-        if tipo_pesquisa == 1:
-            pesquisa = "Denúncia"
+        opcao_pesquisa = int(input("Escolha uma opção de pesquisa: "))
 
-        elif tipo_pesquisa == 2:
-            pesquisa = "Reclamação"
+        # PESQUISAR POR TIPO
 
-        elif tipo_pesquisa == 3:
-            pesquisa = "Solicitação"
+        if opcao_pesquisa == 1:
 
-        elif tipo_pesquisa == 4:
-            pesquisa = "Sugestão"
+            print("\n========= PESQUISAR POR TIPO =========")
+            print("1 - Denúncia")
+            print("2 - Reclamação")
+            print("3 - Solicitação")
+            print("4 - Sugestão")
+            print("5 - Elogio")
 
-        elif tipo_pesquisa == 5:
-            pesquisa = "Elogio"
+            tipo_pesquisa = int(input("Escolha o tipo de pesquisa: "))
 
-        else:
-            pesquisa = ""
+            if tipo_pesquisa == 1:
+                pesquisa = "Denúncia"
 
-        if pesquisa == "":
-            print("Tipo inválido.")
+            elif tipo_pesquisa == 2:
+                pesquisa = "Reclamação"
 
-        else:
+            elif tipo_pesquisa == 3:
+                pesquisa = "Solicitação"
+
+            elif tipo_pesquisa == 4:
+                pesquisa = "Sugestão"
+
+            elif tipo_pesquisa == 5:
+                pesquisa = "Elogio"
+
+            else:
+                pesquisa = ""
+
+            if pesquisa == "":
+                print("Tipo inválido.")
+
+            else:
+                encontrou = False
+
+                print("\n--- RESULTADO DA PESQUISA ---")
+
+                for manifestacao in manifestacoes:
+
+                    if manifestacao[2] == pesquisa:
+                        print("\nProtocolo:", manifestacao[0])
+                        print("Nome:", manifestacao[1])
+                        print("Tipo:", manifestacao[2])
+                        print("Descrição:", manifestacao[3])
+
+                        encontrou = True
+
+                if encontrou == False:
+                    print("Nenhuma manifestação desse tipo foi encontrada.")
+
+        # PESQUISAR POR NOME
+
+        elif opcao_pesquisa == 2:
+
+            nome_pesquisa = input("Digite o nome que deseja pesquisar: ")
+
             encontrou = False
 
             print("\n--- RESULTADO DA PESQUISA ---")
 
             for manifestacao in manifestacoes:
 
-                if manifestacao[1] == pesquisa:
+                if manifestacao[1] == nome_pesquisa:
                     print("\nProtocolo:", manifestacao[0])
-                    print("Tipo:", manifestacao[1])
-                    print("Descrição:", manifestacao[2])
+                    print("Nome:", manifestacao[1])
+                    print("Tipo:", manifestacao[2])
+                    print("Descrição:", manifestacao[3])
 
                     encontrou = True
 
             if encontrou == False:
-                print("Nenhuma manifestação desse tipo foi encontrada.")
+                print("Nenhuma manifestação encontrada para esse nome.")
+
+        else:
+            print("Opção de pesquisa inválida.")
 
     # REMOVER MANIFESTAÇÃO
 
@@ -185,7 +226,9 @@ while opcao != 5:
                     "-",
                     manifestacao[1],
                     "-",
-                    manifestacao[2]
+                    manifestacao[2],
+                    "-",
+                    manifestacao[3]
                 )
 
             codigo_remover = input(
@@ -201,6 +244,7 @@ while opcao != 5:
                     encontrou = True
 
                     print("Manifestação removida com sucesso!")
+                    break
 
             if encontrou == False:
                 print("Protocolo não localizado.")
